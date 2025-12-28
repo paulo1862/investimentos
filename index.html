@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meu Gerenciador de Investimentos</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f0f2f5; color: #333; }
         .header { background: #004085; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         .actions { display: flex; gap: 10px; }
         .btn { padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: bold; cursor: pointer; border: none; color: white; transition: 0.3s; }
@@ -13,7 +13,7 @@
         .btn-refresh { background: #ffc107; color: #212529; }
         .btn:hover { opacity: 0.8; }
         .container { width: 95%; margin: 30px auto; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto; margin-bottom: 30px; }
         table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
         th { background: #f8f9fa; color: #495057; text-transform: uppercase; font-size: 0.75rem; }
@@ -27,28 +27,32 @@
 <body>
 
     <div class="header">
-        <h1>Investimentos 2025</h1>
+        <h1>Carteira 2025</h1>
         <div class="actions">
-            <button class="btn btn-refresh" onclick="atualizarValoresOnline()">🔄 Atualizar Valor de Mercado</button>
+            <button class="btn btn-refresh" onclick="atualizarAPI()">🔄 Atualizar Meus Ativos</button>
             <a href="adicionar_ativo.html" class="btn btn-add">+ Novo Ativo</a>
         </div>
     </div>
 
     <div class="container">
         <div class="card">
+            <h2>Top 10 Ações da B3</h2>
             <table>
                 <thead>
-                    <tr>
-                        <th>Ativo</th>
-                        <th>Tipo</th>
-                        <th>Quantidade</th>
-                        <th>P. Médio (R$)</th>
-                        <th>Preço Mercado (R$)</th>
-                        <th>Total Investido</th>
-                        <th>Valor Atualizado</th>
-                        <th>Lucro/Prejuízo</th>
-                        <th>Ações</th>
-                    </tr>
+                    <tr><th>Ativo</th><th>Preço (R$)</th><th>Variação (%)</th></tr>
+                </thead>
+                <tbody id="top10-corpo">
+                    <!-- Dados do Top 10 serão carregados aqui -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Meus Investimentos</h2>
+            <table>
+                <!-- Tabela dos seus ativos pessoais (mesma de antes) -->
+                <thead>
+                    <tr><th>Ativo</th><th>Tipo</th><th>Qtd</th><th>P. Médio (R$)</th><th>Preço Mercado (R$)</th><th>Total Investido</th><th>Valor Atualizado</th><th>Lucro/Prejuízo</th><th>Ações</th></tr>
                 </thead>
                 <tbody id="tabela-corpo"></tbody>
             </table>
@@ -56,85 +60,37 @@
     </div>
 
     <script>
-        const formatarMoeda = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        const formatarDecimais = (v) => Number(parseFloat(v).toFixed(10));
+        const fmtMoeda = (v) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fmtDec = (v) => Number(parseFloat(v).toFixed(10));
+        const TOP_10_TICKERS = 'PETR4,ITUB4,VALE3,ABEV3,BBDC4,WEGE3,BBAS3,BPAC11,SUZB3,RADL3';
 
-        async function atualizarValoresOnline() {
-            let ativos = JSON.parse(localStorage.getItem('meus_investimentos')) || [];
-            if (ativos.length === 0) return alert("Adicione ativos primeiro!");
-
-            const ativosParaBuscar = ativos.filter(a => a.tipo === 'Ação' || a.tipo === 'FII');
-            if (ativosParaBuscar.length === 0) {
-                return alert("CDBs e Fundos não possuem cotação em tempo real nesta API.");
-            }
-
-            // Usando API Alternativa para maior compatibilidade local
-            const tickers = ativosParaBuscar.map(a => `${a.nome}.SA`).join(','); // Adiciona .SA para B3
-            
+        async function carregarTop10() {
             try {
-                // Esta API (Alpha Vantage via proxy) tende a ser mais flexível com CORS localmente
-                const response = await fetch(`www.alphavantage.co{tickers}&apikey=demo`);
-                const data = await response.json();
+                const res = await fetch(`brapi.dev{TOP_10_TICKERS}`);
+                const data = await res.json();
+                const corpoTop10 = document.getElementById('top10-corpo');
+                corpoTop10.innerHTML = '';
 
-                if (!data['Stock Quotes Summary']) throw new Error("Erro na API");
-
-                ativos.forEach(ativo => {
-                    const info = data['Stock Quotes Summary'].find(r => r['1. symbol'] === `${ativo.nome}.SA`);
-                    if (info && info['2. price']) {
-                        ativo.precoMercado = parseFloat(info['2. price']);
-                    }
+                data.results.forEach(info => {
+                    const variacao = info.regularMarketChangePercent.toFixed(2);
+                    const classeCor = variacao >= 0 ? 'pos-lucro' : 'pos-prejuizo';
+                    corpoTop10.innerHTML += `
+                        <tr>
+                            <td><b>${info.symbol}</b></td>
+                            <td>R$ ${fmtMoeda(info.regularMarketPrice)}</td>
+                            <td class="${classeCor}">${variacao}%</td>
+                        </tr>`;
                 });
-                
-                localStorage.setItem('meus_investimentos', JSON.stringify(ativos));
-                carregarTabela();
-                alert("Valores atualizados!");
-            } catch (e) {
-                console.error(e);
-                alert("Erro de conexão (CORS/API Limit). Tente novamente em 1 minuto ou verifique a conexão.");
+            } catch(e) {
+                console.error("Erro ao carregar Top 10:", e);
+                document.getElementById('top10-corpo').innerHTML = '<tr><td colspan="3">Não foi possível carregar o Top 10. Tente novamente mais tarde.</td></tr>';
             }
         }
 
-        function carregarTabela() {
-            const corpo = document.getElementById('tabela-corpo');
-            const ativos = JSON.parse(localStorage.getItem('meus_investimentos')) || [];
-            corpo.innerHTML = "";
-
-            ativos.forEach((item, index) => {
-                const qtd = parseFloat(item.quantidade);
-                const pMedio = parseFloat(item.preco);
-                const pMercado = item.precoMercado || pMedio;
-                
-                const totalInvestido = qtd * pMedio;
-                const valorAtualizado = qtd * pMercado;
-                const resultado = valorAtualizado - totalInvestido;
-                const classeCor = resultado >= 0 ? 'pos-lucro' : 'pos-prejuizo';
-
-                corpo.innerHTML += `
-                    <tr>
-                        <td class="ticker">${item.nome}</td>
-                        <td>${item.tipo}</td>
-                        <td>${formatarDecimais(qtd)}</td>
-                        <td>${formatarDecimais(pMedio)}</td>
-                        <td>R$ ${formatarMoeda(pMercado)}</td>
-                        <td>R$ ${formatarMoeda(totalInvestido)}</td>
-                        <td>R$ ${formatarMoeda(valorAtualizado)}</td>
-                        <td class="${classeCor}">R$ ${formatarMoeda(resultado)}</td>
-                        <td><button class="btn-delete" onclick="remover(${index})">🗑️</button></td>
-                    </tr>
-                `;
-            });
-        }
-
-        function remover(index) {
-            if(confirm("Deseja remover este ativo?")) {
-                let ativos = JSON.parse(localStorage.getItem('meus_investimentos')) || [];
-                ativos.splice(index, 1);
-                localStorage.setItem('meus_investimentos', JSON.stringify(ativos));
-                carregarTabela();
-            }
-        }
-
-        window.onload = carregarTabela;
-    </script>
-</body>
-</html>
+        async function atualizarAPI() {
+            // Função para atualizar seus ativos pessoais (mesma lógica de antes)
+            let ativos = JSON.parse(localStorage.getItem('invest_2025')) || [];
+            const tickers = ativos.filter(x => x.tipo === 'Ação' || x.tipo === 'FII').map(x => x.nome).join(',');
+            if(!tickers) return alert("Nenhum ativo de bolsa (Ação/FII) encontrado para atualizar.");
+            try {
+                const res = await fetch(`
