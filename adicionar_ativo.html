@@ -3,74 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo Investimento - 2025</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 450px; }
-        h2 { text-align: center; color: #004085; margin-top: 0; }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: bold; color: #495057; }
-        input, select { width: 100%; padding: 12px; border: 2px solid #e9ecef; border-radius: 8px; box-sizing: border-box; font-size: 1rem; outline: none; }
-        input:focus { border-color: #004085; }
-        .btn-save { width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1.1rem; font-weight: bold; margin-top: 10px; }
-        .btn-save:hover { background: #218838; }
-        .btn-back { display: block; text-align: center; margin-top: 20px; color: #6c757d; text-decoration: none; font-size: 0.9rem; }
-    </style>
+    <title>Novo Investimento - Cadastro</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="card">
-        <h2>Adicionar Ativo</h2>
-        <form id="form-invest">
-            <div class="form-group">
-                <label>Ticker (Ex: PETR4, VALE3, ITUB4)</label>
-                <input type="text" id="nome" placeholder="CÓDIGO NA BOLSA" required>
-            </div>
-            <div class="form-group">
-                <label>Tipo de Ativo</label>
-                <select id="tipo">
-                    <option value="Ação">Ação</option>
-                    <option value="FII">FII (Imobiliário)</option>
-                    <option value="Fundo de Investimento">Fundo de Investimento</option>
-                    <option value="CDB">CDB / Renda Fixa</option>
-                    <option value="Cripto">Cripto</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Quantidade (até 10 casas)</label>
-                <input type="number" id="quantidade" step="0.0000000001" required>
-            </div>
-            <div class="form-group">
-                <label>Preço Médio Pago (R$)</label>
-                <input type="number" id="preco" step="0.0000000001" required>
-            </div>
-            <button type="submit" class="btn-save">Salvar na Carteira</button>
-        </form>
-        <!-- Link corrigido para index.html -->
-        <a href="index.html" class="btn-back">⬅ Voltar ao Dashboard</a>
+    <div class="container-form">
+        <div class="card form-card">
+            <h2>Adicionar Ativo</h2>
+            <form id="form-invest">
+                <div class="form-group">
+                    <label>Ticker (Ex: PETR4, VALE3)</label>
+                    <input type="text" id="nome" required>
+                </div>
+                <div class="form-group">
+                    <label>Corretora</label>
+                    <select id="corretora">
+                        <option value="XP Investimentos">XP Investimentos</option>
+                        <option value="Clear">Clear</option>
+                        <option value="Rico">Rico</option>
+                        <option value="Inter">Inter</option>
+                        <option value="Outra">Outra</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Ativo</label>
+                    <select id="tipo">
+                        <option value="Ação">Ação</option>
+                        <option value="FII">FII</option>
+                        <option value="CDB">CDB / Renda Fixa</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Quantidade</label>
+                    <input type="number" id="quantidade" step="0.0000000001" required>
+                </div>
+                <div class="form-group">
+                    <label>Preço Médio Pago (R$)</label>
+                    <input type="number" id="preco" step="0.0000000001" required>
+                </div>
+                <button type="submit" class="btn btn-add btn-block">Salvar na Carteira</button>
+            </form>
+            <a href="index.html" class="btn-back">⬅ Voltar</a>
+        </div>
     </div>
 
     <script>
         document.getElementById('form-invest').addEventListener('submit', function(e) {
             e.preventDefault();
-
             const novo = {
                 nome: document.getElementById('nome').value.toUpperCase().trim(),
+                corretora: document.getElementById('corretora').value,
                 tipo: document.getElementById('tipo').value,
                 quantidade: document.getElementById('quantidade').value,
                 preco: document.getElementById('preco').value,
-                precoMercado: null // Será atualizado pela API no index.html
+                precoMercado: null
             };
-
-            // Banco de dados invest_2025 (mesmo do index.html)
             let ativos = JSON.parse(localStorage.getItem('invest_2025')) || [];
             ativos.push(novo);
             localStorage.setItem('invest_2025', JSON.stringify(ativos));
-
-            alert('Ativo salvo com sucesso!');
-            // Redirecionamento corrigido para index.html
-            window.location.href = 'index.html'; 
+            alert('Ativo cadastrado!');
+            window.location.href = 'index.html';
         });
     </script>
+
 </body>
 </html>
