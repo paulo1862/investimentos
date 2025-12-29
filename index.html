@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Dashboard de Investimentos Pro</title>
+    <title>Dashboard de Investimentos 2025</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <header class="header">
         <h1>Investimentos 2025</h1>
         <div class="actions">
@@ -17,16 +16,18 @@
     </header>
 
     <div class="container">
+        <!-- TOP 10 B3 -->
         <div class="card">
             <h2>Mercado Hoje (Top 10 B3)</h2>
             <table>
                 <thead>
                     <tr><th>Ticker</th><th>Nome da Empresa</th><th>Preço Atual</th><th>Variação</th></tr>
                 </thead>
-                <tbody id="corpo-top10"><tr><td colspan="4">Buscando dados...</td></tr></tbody>
+                <tbody id="corpo-top10"><tr><td colspan="4">Carregando dados da bolsa...</td></tr></tbody>
             </table>
         </div>
 
+        <!-- MINHA CARTEIRA -->
         <div class="card">
             <h2>Minha Carteira</h2>
             <table>
@@ -42,77 +43,6 @@
         const TOKEN = "en4hSkmZoFaEh9oQeFsqqM";
         const TOP_10 = "VALE3,PETR4,ITUB4,ABEV3,BBDC4,BBAS3,WEGE3,ITSA4,RENT3,SANB11";
 
+        // Função corrigida para requisição segura em 2025
         async function buscarPrecos(listaTickers) {
-            const url = `brapi.dev{listaTickers}?token=${TOKEN}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("Erro na API");
-            return await response.json();
-        }
-
-        async function atualizarTudo() {
-            try {
-                const dadosTop = await buscarPrecos(TOP_10);
-                const corpoTop = document.getElementById('corpo-top10');
-                corpoTop.innerHTML = '';
-                dadosTop.results.forEach(res => {
-                    const varCor = res.regularMarketChangePercent >= 0 ? 'lucro' : 'prejuizo';
-                    corpoTop.innerHTML += `<tr><td><b>${res.symbol}</b></td><td>${res.longName || ''}</td><td>R$ ${res.regularMarketPrice.toFixed(2)}</td><td class="${varCor}">${res.regularMarketChangePercent.toFixed(2)}%</td></tr>`;
-                });
-
-                let ativos = JSON.parse(localStorage.getItem('invest_2025')) || [];
-                if (ativos.length > 0) {
-                    const tickersCarteira = ativos.filter(a => a.tipo === 'Ação' || a.tipo === 'FII').map(a => a.nome).join(',');
-                    if (tickersCarteira) {
-                        const dadosCarteira = await buscarPrecos(tickersCarteira);
-                        ativos.forEach(a => {
-                            const info = dadosCarteira.results.find(r => r.symbol === a.nome);
-                            if (info) a.precoMercado = info.regularMarketPrice;
-                        });
-                        localStorage.setItem('invest_2025', JSON.stringify(ativos));
-                    }
-                }
-                renderCarteira();
-            } catch (e) {
-                console.error("Falha na atualização:", e);
-                alert("Erro ao conectar com a B3. Verifique seu Token.");
-            }
-        }
-
-        function renderCarteira() {
-            const ativos = JSON.parse(localStorage.getItem('invest_2025')) || [];
-            const corpo = document.getElementById('corpo-carteira');
-            corpo.innerHTML = '';
-            ativos.forEach((a, i) => {
-                const pMercado = a.precoMercado || a.preco;
-                const valorAtual = a.quantidade * pMercado;
-                const resultado = (pMercado - a.preco) * a.quantidade;
-                const varCor = resultado >= 0 ? 'lucro' : 'prejuizo';
-                corpo.innerHTML += `
-                    <tr>
-                        <td><b>${a.nome}</b></td>
-                        <td>${a.corretora}</td>
-                        <td>${Number(a.quantidade).toFixed(4)}</td>
-                        <td>R$ ${Number(a.preco).toFixed(2)}</td>
-                        <td>R$ ${Number(pMercado).toFixed(2)}</td>
-                        <td>R$ ${valorAtual.toFixed(2)}</td>
-                        <td class="${varCor}">R$ ${resultado.toFixed(2)}</td>
-                        <td><button onclick="remover(${i})">🗑️</button></td>
-                    </tr>`;
-            });
-        }
-
-        function remover(i) {
-            let ativos = JSON.parse(localStorage.getItem('invest_2025'));
-            ativos.splice(i, 1);
-            localStorage.setItem('invest_2025', JSON.stringify(ativos));
-            renderCarteira();
-        }
-
-        window.onload = () => {
-            renderCarteira();
-            atualizarTudo();
-        };
-    </script>
-
-</body>
-</html>
+            const url = `
