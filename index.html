@@ -1,1 +1,206 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Império Financeiro - Vader</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --primary: #ecf0f1; --secondary: #18bc9c; --card-bg: rgba(30, 40, 50, 0.95); --text: #bdc3c7; --border-color: #455a64; }
+        body { font-family: 'Segoe UI', sans-serif; background-image: url('vader_fundo.jpg'); background-color: #1a1a1a; background-size: cover; background-position: center top; background-attachment: fixed; color: var(--text); margin: 0; padding: 20px; min-height: 100vh; }
+        .container { max-width: 1400px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; }
+        h1 { margin: 0; color: var(--primary); text-transform: uppercase; letter-spacing: 2px; }
+        .data-hoje { font-size: 1.1rem; color: var(--secondary); font-weight: bold; display: block; margin-top: 5px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 12px 24px; background: rgba(0,0,0,0.6); border: 1px solid var(--border-color); border-radius: 5px; cursor: pointer; font-size: 1rem; font-weight: bold; color: var(--text); transition: 0.3s; }
+        .tab.active { background: var(--secondary); color: #fff; border-color: var(--secondary); }
+        .aba-content { display: none; }
+        .aba-content.active { display: block; }
+        .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        .btn-primary { background-color: var(--secondary); }
+        .btn-danger { background-color: #c0392b; }
+        .btn-salvar { background-color: #2980b9; width: 100%; font-size: 1.1rem; padding: 15px; margin-top: 10px;}
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px; }
+        .card { background-color: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .metric-value { font-size: 1.8rem; font-weight: bold; color: var(--primary); margin: 5px 0;}
+        .metric-label { font-size: 0.85rem; color: #95a5a6; text-transform: uppercase; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { color: var(--secondary); font-weight: 600; background-color: rgba(0,0,0,0.3); text-transform: uppercase; font-size: 0.85rem;}
+        .form-control { width: 100%; padding: 10px; background-color: rgba(0,0,0,0.5); border: 1px solid var(--border-color); color: white; border-radius: 5px; box-sizing: border-box; }
+        .input-dia { width: 120px; padding: 8px; background-color: rgba(0,0,0,0.8); border: 2px solid var(--secondary); color: var(--secondary); border-radius: 5px; font-weight: bold; text-align: right; }
+        .login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)), url('vader_fundo.jpg'); background-size: cover; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .login-box { background: var(--card-bg); padding: 40px; border-radius: 8px; text-align: center; width: 300px; border: 1px solid var(--border-color); }
+        .positive { color: #2ecc71; }
+        .negative { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+<div id="telaLogin" class="login-screen">
+    <div class="login-box">
+        <img src="vader_sabre.jpg" style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid #e74c3c; margin-bottom: 20px;">
+        <h2 style="color: white;">COMANDO SITH</h2>
+        <input type="password" id="senhaInput" class="form-control" placeholder="Credencial" style="text-align: center;">
+        <button class="btn btn-danger" style="width: 100%; margin-top: 15px;" onclick="verificarSenha()">ENTRAR</button>
+        <p id="erroSenha" style="color: #e74c3c; display: none; margin-top: 10px;">Acesso Negado.</p>
+    </div>
+</div>
+
+<div id="conteudoSistema" style="display: none;">
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>Império Financeiro</h1>
+                <span class="data-hoje" id="dataHoje"></span>
+            </div>
+            <div>
+                <button class="btn" style="background: #27ae60;" onclick="exportarBackup()">💾 Backup</button>
+                <label class="btn" style="background: #f39c12; cursor:pointer;">📂 Restaurar <input type="file" style="display:none" onchange="importarBackup(event)"></label>
+                <button class="btn" style="background: #555;" onclick="location.reload()">Sair</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" id="btn-tab-dashboard" onclick="mudarAba('dashboard')">📊 Dashboard</button>
+            <button class="tab" id="btn-tab-lancamentos" onclick="mudarAba('lancamentos')">⚙️ Lançamentos</button>
+        </div>
+
+        <div id="dashboard" class="aba-content active">
+            <div class="grid-4">
+                <div class="card"><div class="metric-label">Patrimônio Atual</div><div class="metric-value" id="dashPatrimonioAtual">R$ 0,00</div></div>
+                <div class="card"><div class="metric-label">Lucro Mensal</div><div class="metric-value" id="dashLucroMes">R$ 0,00</div></div>
+                <div class="card"><div class="metric-label">Rentabilidade</div><div class="metric-value" id="dashRentab">0.00%</div></div>
+                <div class="card"><div class="metric-label">Investido no Ano</div><div class="metric-value" id="dashInvestido">R$ 0,00</div></div>
+            </div>
+
+            <div class="card">
+                <h3>Performance por Instituição</h3>
+                <table id="tabelaPerformance">
+                    <thead><tr><th>Banco</th><th>Saldo Atual</th><th>Lucro</th><th>Rentab %</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="lancamentos" class="aba-content">
+            <div class="card" style="margin-bottom: 20px;">
+                <h3>Adicionar Novo Banco</h3>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="nNome" class="form-control" placeholder="Banco">
+                    <input type="number" id="nSaldo" class="form-control" placeholder="Saldo Inicial">
+                    <button class="btn btn-primary" onclick="addBanco()">Cadastrar</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Atualizar Saldos do Dia</h3>
+                <table id="tabelaAtualizacao">
+                    <thead><tr><th>Banco</th><th>Movimentação</th><th>Ação</th><th>Saldo Atual</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('vaderDB_Global')) || { bancos: [] };
+
+    function verificarSenha() {
+        const pass = document.getElementById('senhaInput').value;
+        const savedPass = localStorage.getItem('vader_secret_pass') || "Sith2026";
+        if(pass === savedPass) {
+            document.getElementById('telaLogin').style.display = 'none';
+            document.getElementById('conteudoSistema').style.display = 'block';
+            render();
+        } else { document.getElementById('erroSenha').style.display = 'block'; }
+    }
+
+    function mudarAba(id) {
+        document.querySelectorAll('.aba-content').forEach(e => e.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.getElementById('btn-tab-'+id).classList.add('active');
+    }
+
+    function addBanco() {
+        const nome = document.getElementById('nNome').value;
+        const saldo = parseFloat(document.getElementById('nSaldo').value) || 0;
+        if(nome) {
+            db.bancos.push({ nome, saldoInicial: saldo, saldoAtual: saldo, aportes: 0 });
+            salvar();
+            document.getElementById('nNome').value = '';
+            document.getElementById('nSaldo').value = '';
+        }
+    }
+
+    function movimentar(idx, tipo) {
+        const val = parseFloat(document.getElementById(`mov-${idx}`).value) || 0;
+        if(tipo === 'add') { db.bancos[idx].saldoAtual += val; db.bancos[idx].aportes += val; }
+        else { db.bancos[idx].saldoAtual -= val; }
+        document.getElementById(`mov-${idx}`).value = '';
+        salvar();
+    }
+
+    function salvar() {
+        localStorage.setItem('vaderDB_Global', JSON.stringify(db));
+        render();
+    }
+
+    function render() {
+        document.getElementById('dataHoje').innerText = new Date().toLocaleDateString('pt-BR');
+        const tbPerf = document.querySelector('#tabelaPerformance tbody');
+        const tbLanc = document.querySelector('#tabelaAtualizacao tbody');
+        tbPerf.innerHTML = ''; tbLanc.innerHTML = '';
+        
+        let total = 0; let totalIni = 0;
+        
+        db.bancos.forEach((b, i) => {
+            total += b.saldoAtual;
+            totalIni += b.saldoInicial;
+            let lucro = b.saldoAtual - b.saldoInicial;
+            let perc = b.saldoInicial > 0 ? (lucro/b.saldoInicial*100).toFixed(2) : 0;
+
+            tbPerf.innerHTML += `<tr><td>${b.nome}</td><td>R$ ${b.saldoAtual.toLocaleString()}</td><td class="${lucro>=0?'positive':'negative'}">R$ ${lucro.toLocaleString()}</td><td>${perc}%</td></tr>`;
+            
+            tbLanc.innerHTML += `<tr>
+                <td><strong>${b.nome}</strong></td>
+                <td><input type="number" id="mov-${i}" class="form-control" style="width:100px"></td>
+                <td>
+                    <button class="btn btn-primary" onclick="movimentar(${i}, 'add')">+</button>
+                    <button class="btn btn-danger" onclick="movimentar(${i}, 'sub')">-</button>
+                </td>
+                <td><input type="number" class="input-dia" value="${b.saldoAtual}" onchange="db.bancos[${i}].saldoAtual=parseFloat(this.value);salvar()"></td>
+            </tr>`;
+        });
+
+        document.getElementById('dashPatrimonioAtual').innerText = `R$ ${total.toLocaleString()}`;
+        document.getElementById('dashLucroMes').innerText = `R$ ${(total - totalIni).toLocaleString()}`;
+        document.getElementById('dashRentab').innerText = (totalIni > 0 ? ((total-totalIni)/totalIni*100).toFixed(2) : 0) + '%';
+    }
+
+    function exportarBackup() {
+        const data = { db: db, pass: localStorage.getItem('vader_secret_pass') || "Sith2026" };
+        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'backup_vader_total.json';
+        a.click();
+    }
+
+    function importarBackup(e) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const data = JSON.parse(event.target.result);
+            db = data.db;
+            localStorage.setItem('vader_secret_pass', data.pass);
+            salvar();
+            alert("Sistema Restaurado!");
+        };
+        reader.readAsText(e.target.files[0]);
+    }
+</script>
+</body>
+</html>
 
